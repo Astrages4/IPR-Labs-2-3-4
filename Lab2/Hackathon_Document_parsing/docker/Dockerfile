@@ -5,6 +5,7 @@ WORKDIR /app
 # Устанавливаем системные зависимости для работы с PDF/DOCX
 RUN apt-get update && apt-get install -y \
     poppler-utils \
+    fonts-liberation \
     libmagic1 \
     && rm -rf /var/lib/apt/lists/*
 
