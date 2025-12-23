@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile-app
+      target: runtime
+    env_file:
+      - ./.env
+    working_dir: /sharecare
+    volumes:
+      - ./app:/sharecare/app
+      - ./uploads:/sharecare/uploads
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["python", "-m", "app.main"]
+    environment:
+      - PYTHONUNBUFFERED=1
+    networks:
+      - app_net
+
+  postgres:
+    image: postgres:18-alpine3.22
+    env_file:
+      - ./.env
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    hostname: ${HOST}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    working_dir: /sharecare
+    restart: unless-stopped
+    command: -p ${POSTGRES_PORT}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -p ${POSTGRES_PORT} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_net
+
+volumes:
+  db_data:
+
+networks:
+  app_net:
+    driver: bridge
